@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* Print Rules for 100% Vector Crisp PDF generation via Browser */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  header,
+  nav,
+  #ebook-content-editor,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  #root,
+  #ebook-preview-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    background: transparent !important;
+  }
+
+  .ebook-page-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+
+  @page {
+    margin: 0;
+    size: auto;
+  }
+}
