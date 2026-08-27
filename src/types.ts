@@ -143,3 +143,17 @@ export interface BookTemplate {
   settings: Partial<BookSettings>;
   sampleImages?: ImageAsset[];
 }
+
+export interface SavedBookOutline {
+  id: string;
+  name: string;
+  savedAt: number; // timestamp in ms
+  content: string;
+  bookTitle?: string;
+  authorName?: string;
+  wordCount: number;
+  characterCount: number;
+  chapterCount: number;
+  settings?: Partial<BookSettings>;
+  tags?: string[];
+}

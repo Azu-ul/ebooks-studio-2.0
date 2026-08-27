@@ -27,7 +27,9 @@ import {
   ChevronRight,
   X,
   Replace,
-  ReplaceAll
+  ReplaceAll,
+  Save,
+  History
 } from 'lucide-react';
 import { ImageAsset } from '../types';
 import { getTextareaCaretCoordinates } from '../utils/caretCoordinates';
@@ -38,6 +40,8 @@ interface EditorPanelProps {
   images: ImageAsset[];
   onOpenImages: () => void;
   onOpenCheatsheet: () => void;
+  onOpenHistory?: () => void;
+  onQuickSaveOutline?: () => void;
 }
 
 interface TextMatch {
@@ -51,13 +55,26 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   images,
   onOpenImages,
   onOpenCheatsheet,
+  onOpenHistory,
+  onQuickSaveOutline,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
+  const [quickSaved, setQuickSaved] = useState(false);
   const [textareaClientWidth, setTextareaClientWidth] = useState<number | null>(null);
+
+  const handleQuickSave = () => {
+    if (onQuickSaveOutline) {
+      onQuickSaveOutline();
+      setQuickSaved(true);
+      setTimeout(() => setQuickSaved(false), 2200);
+    } else if (onOpenHistory) {
+      onOpenHistory();
+    }
+  };
 
   // Undo / Redo history state
   const historyRef = useRef<string[]>([content]);
@@ -593,6 +610,41 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
           <span>Buscar</span>
         </button>
 
+        {/* Quick Save Outline Button */}
+        <button
+          id="editor-btn-save-outline"
+          onClick={handleQuickSave}
+          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded border border-[#B8860B]/50 bg-[#FAF9F7] hover:bg-[#B8860B] hover:text-white text-[#1A1A1A] transition-all active:scale-95 shadow-2xs"
+          title="Guardar esquema del ebook en almacenamiento local"
+        >
+          {quickSaved ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-emerald-700 font-bold">¡Guardado!</span>
+            </>
+          ) : (
+            <>
+              <Save className="w-3.5 h-3.5 text-[#B8860B]" />
+              <span>Guardar esquema</span>
+            </>
+          )}
+        </button>
+
+        {/* History Modal Trigger Button */}
+        {onOpenHistory && (
+          <button
+            id="editor-btn-history"
+            onClick={onOpenHistory}
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border border-[#D1CEC8] bg-[#F4F1EE] hover:bg-[#EBE7E1] text-[#1A1A1A] transition-colors"
+            title="Abrir historial de esquemas y versiones guardadas"
+          >
+            <History className="w-3 h-3 text-[#777]" />
+            <span>Historial</span>
+          </button>
+        )}
+
+        <div className="h-4 w-px bg-[#D1CEC8] mx-0.5" />
+
         <div className="text-[10px] font-bold text-[#888] uppercase tracking-widest px-1.5 py-0.5 flex items-center gap-1">
           <span>Insertar:</span>
         </div>
@@ -1052,6 +1104,15 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleQuickSave}
+            className="flex items-center gap-1 hover:text-[#1A1A1A] px-2 py-0.5 rounded hover:bg-[#FAF9F7] text-[#B8860B] font-medium transition-colors"
+            title="Guardar esquema del ebook"
+          >
+            {quickSaved ? <Check className="w-3 h-3 text-emerald-600" /> : <Save className="w-3 h-3" />}
+            <span>{quickSaved ? 'Guardado' : 'Guardar'}</span>
+          </button>
+
           <button
             onClick={handleCopyText}
             className="flex items-center gap-1 hover:text-[#1A1A1A] px-2 py-0.5 rounded hover:bg-[#FAF9F7] transition-colors"

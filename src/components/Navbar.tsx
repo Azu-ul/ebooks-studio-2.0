@@ -7,7 +7,9 @@ import {
   HelpCircle, 
   Palette, 
   Eye, 
-  FileText
+  FileText,
+  History,
+  Bookmark
 } from 'lucide-react';
 import { BookSettings } from '../types';
 
@@ -19,6 +21,8 @@ interface NavbarProps {
   onOpenImages: () => void;
   onOpenCheatsheet: () => void;
   onOpenExport: () => void;
+  onOpenHistory: () => void;
+  savedOutlinesCount: number;
   totalPageCount: number;
 }
 
@@ -30,6 +34,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenImages,
   onOpenCheatsheet,
   onOpenExport,
+  onOpenHistory,
+  savedOutlinesCount,
   totalPageCount,
 }) => {
   return (
@@ -127,6 +133,22 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <HelpCircle className="w-3.5 h-3.5 text-[#666]" />
           <span className="hidden sm:inline tracking-wide">Guía</span>
+        </button>
+
+        {/* History / Outlines trigger */}
+        <button
+          id="btn-history-outlines"
+          onClick={onOpenHistory}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#2C2C2C] hover:text-[#1A1A1A] bg-[#FAF9F7] hover:bg-white border border-[#D1CEC8] rounded transition-colors relative"
+          title="Historial de esquemas y versiones guardadas del ebook"
+        >
+          <History className="w-3.5 h-3.5 text-[#B8860B]" />
+          <span className="hidden sm:inline tracking-wide">Esquemas</span>
+          {savedOutlinesCount > 0 && (
+            <span className="px-1.5 py-0.2 text-[9px] font-bold bg-[#1A1A1A] text-white rounded-full leading-tight">
+              {savedOutlinesCount}
+            </span>
+          )}
         </button>
 
         {/* Primary Export Button */}

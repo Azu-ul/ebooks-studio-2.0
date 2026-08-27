@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Navbar } from './components/Navbar';
 import { EditorPanel } from './components/EditorPanel';
 import { DesignSettingsPanel } from './components/DesignSettingsPanel';
@@ -6,10 +6,18 @@ import { BookPreview } from './components/BookPreview';
 import { ImageManagerModal } from './components/ImageManagerModal';
 import { CheatsheetModal } from './components/CheatsheetModal';
 import { ExportModal } from './components/ExportModal';
-import { BookSettings, ImageAsset } from './types';
+import { HistoryModal } from './components/HistoryModal';
+import { BookSettings, ImageAsset, SavedBookOutline } from './types';
 import { parseBookText } from './utils/parser';
 import { DEFAULT_BOOK_SETTINGS, DEFAULT_SAMPLE_IMAGES, BOOK_TEMPLATES } from './utils/templates';
 import { saveImagesToDB, loadImagesFromDB } from './utils/imageStorage';
+import { 
+  loadSavedOutlines, 
+  saveNewOutline, 
+  deleteSavedOutline, 
+  updateSavedOutline 
+} from './utils/historyStorage';
+import { BookmarkCheck } from 'lucide-react';
 
 const STORAGE_KEY_CONTENT = 'ebook_studio_content_v1';
 const STORAGE_KEY_SETTINGS = 'ebook_studio_settings_v1';
@@ -39,9 +47,24 @@ export default function App() {
     return DEFAULT_BOOK_SETTINGS;
   });
 
+  // Saved outlines history state
+  const [outlines, setOutlines] = useState<SavedBookOutline[]>(() => {
+    return loadSavedOutlines();
+  });
+
   // Images state (IndexedDB first, fallback to initial default sample)
   const [images, setImages] = useState<ImageAsset[]>(DEFAULT_SAMPLE_IMAGES);
   const [isImagesLoadedFromDB, setIsImagesLoadedFromDB] = useState(false);
+
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((current) => (current === msg ? null : current));
+    }, 3000);
+  }, []);
 
   // Load from IndexedDB on startup
   useEffect(() => {
@@ -87,6 +110,7 @@ export default function App() {
   const [isImagesModalOpen, setIsImagesModalOpen] = useState(false);
   const [isCheatsheetModalOpen, setIsCheatsheetModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [totalPageCount, setTotalPageCount] = useState(1);
 
   // Auto-save content and settings to localStorage safely
@@ -150,13 +174,63 @@ export default function App() {
     setContent((prev) => prev + '\n\n' + tag);
   };
 
+  // History Outlines Handlers
+  const handleSaveOutline = (name: string) => {
+    const saved = saveNewOutline({
+      name,
+      content,
+      settings,
+    });
+    setOutlines((prev) => [saved, ...prev.filter((o) => o.id !== saved.id)]);
+    showToast(`Esquema "${saved.name}" guardado correctamente en el historial`);
+  };
+
+  const handleQuickSaveOutline = () => {
+    const saved = saveNewOutline({
+      content,
+      settings,
+    });
+    setOutlines((prev) => [saved, ...prev.filter((o) => o.id !== saved.id)]);
+    showToast(`Esquema "${saved.name}" guardado en el historial`);
+  };
+
+  const handleLoadOutline = (outline: SavedBookOutline) => {
+    setContent(outline.content);
+    if (outline.settings) {
+      setSettings((prev) => ({ ...prev, ...outline.settings }));
+    }
+    showToast(`Esquema "${outline.name}" cargado en el editor`);
+  };
+
+  const handleDeleteOutline = (id: string) => {
+    const updated = deleteSavedOutline(id);
+    setOutlines(updated);
+    showToast('Esquema eliminado del historial');
+  };
+
+  const handleUpdateOutlineName = (id: string, newName: string) => {
+    const updated = updateSavedOutline(id, { name: newName });
+    setOutlines(updated);
+    showToast('Nombre de esquema actualizado');
+  };
+
   // Real-time parsing of tags
   const parsedBlocks = useMemo(() => {
     return parseBookText(content);
   }, [content]);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#FAF9F7] text-[#1A1A1A] overflow-hidden font-sans">
+    <div className="h-screen w-screen flex flex-col bg-[#FAF9F7] text-[#1A1A1A] overflow-hidden font-sans relative">
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="absolute top-16 right-6 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="bg-[#1A1A1A] text-white px-4 py-2.5 rounded-lg shadow-lg border border-[#333] flex items-center gap-2 text-xs font-medium">
+            <BookmarkCheck className="w-4 h-4 text-[#B8860B]" />
+            <span>{toastMessage}</span>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation Bar */}
       <Navbar
         settings={settings}
@@ -166,6 +240,8 @@ export default function App() {
         onOpenImages={() => setIsImagesModalOpen(true)}
         onOpenCheatsheet={() => setIsCheatsheetModalOpen(true)}
         onOpenExport={() => setIsExportModalOpen(true)}
+        onOpenHistory={() => setIsHistoryModalOpen(true)}
+        savedOutlinesCount={outlines.length}
         totalPageCount={totalPageCount}
       />
 
@@ -185,6 +261,8 @@ export default function App() {
               images={images}
               onOpenImages={() => setIsImagesModalOpen(true)}
               onOpenCheatsheet={() => setIsCheatsheetModalOpen(true)}
+              onOpenHistory={() => setIsHistoryModalOpen(true)}
+              onQuickSaveOutline={handleQuickSaveOutline}
             />
           )}
         </div>
@@ -201,6 +279,18 @@ export default function App() {
       </div>
 
       {/* Modals */}
+      <HistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        currentContent={content}
+        currentSettings={settings}
+        outlines={outlines}
+        onSaveOutline={handleSaveOutline}
+        onLoadOutline={handleLoadOutline}
+        onDeleteOutline={handleDeleteOutline}
+        onUpdateOutlineName={handleUpdateOutlineName}
+      />
+
       <ImageManagerModal
         isOpen={isImagesModalOpen}
         onClose={() => setIsImagesModalOpen(false)}
