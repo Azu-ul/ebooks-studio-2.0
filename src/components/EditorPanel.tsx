@@ -29,7 +29,8 @@ import {
   Replace,
   ReplaceAll,
   Save,
-  History
+  History,
+  Eye
 } from 'lucide-react';
 import { ImageAsset } from '../types';
 import { getTextareaCaretCoordinates } from '../utils/caretCoordinates';
@@ -42,6 +43,7 @@ interface EditorPanelProps {
   onOpenCheatsheet: () => void;
   onOpenHistory?: () => void;
   onQuickSaveOutline?: () => void;
+  onOpenPreview?: () => void;
 }
 
 interface TextMatch {
@@ -57,6 +59,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   onOpenCheatsheet,
   onOpenHistory,
   onQuickSaveOutline,
+  onOpenPreview,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -561,7 +564,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#FAF9F7] border-r border-[#D1CEC8] select-none overflow-hidden min-w-0">
+    <div className="h-full flex flex-col bg-[#FAF9F7] select-none overflow-hidden min-w-0">
       {/* Top Tag Toolbar */}
       <div className="shrink-0 p-2.5 border-b border-[#D1CEC8] bg-white flex flex-wrap items-center gap-1.5 shadow-xs">
         {/* Undo & Redo Quick Buttons */}
@@ -843,6 +846,19 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
         >
           <Underline className="w-3.5 h-3.5" />
         </button>
+
+        {/* Quick jump to Book Preview */}
+        {onOpenPreview && (
+          <button
+            id="editor-btn-view-preview"
+            onClick={onOpenPreview}
+            className="ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-[#1A1A1A] hover:bg-[#333] text-white text-xs rounded font-medium shadow-xs transition-colors shrink-0"
+            title="Volver a la vista previa del libro"
+          >
+            <Eye className="w-3.5 h-3.5 text-[#B8860B]" />
+            <span>Ver Vista Previa</span>
+          </button>
+        )}
       </div>
 
       {/* Docked Search & Replace Bar (collapsible, never obscures text) */}

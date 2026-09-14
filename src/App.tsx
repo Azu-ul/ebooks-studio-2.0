@@ -106,7 +106,8 @@ export default function App() {
   }, []);
 
   // UI state
-  const [activeTab, setActiveTab] = useState<'editor' | 'design' | 'preview'>('editor');
+  const [activeTab, setActiveTab] = useState<'editor' | 'design' | 'preview'>('preview');
+  const [isSplitView, setIsSplitView] = useState<boolean>(false);
   const [isImagesModalOpen, setIsImagesModalOpen] = useState(false);
   const [isCheatsheetModalOpen, setIsCheatsheetModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -220,7 +221,7 @@ export default function App() {
   }, [content]);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#FAF9F7] text-[#1A1A1A] overflow-hidden font-sans relative">
+    <div className="h-screen w-full flex flex-col bg-[#FAF9F7] text-[#1A1A1A] overflow-hidden font-sans relative">
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div className="absolute top-16 right-6 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -243,39 +244,88 @@ export default function App() {
         onOpenHistory={() => setIsHistoryModalOpen(true)}
         savedOutlinesCount={outlines.length}
         totalPageCount={totalPageCount}
+        isSplitView={isSplitView}
+        onToggleSplitView={() => setIsSplitView((prev) => !prev)}
       />
 
-      {/* Main Workspace Layout */}
-      <div className="flex-1 flex overflow-hidden min-w-0 bg-[#FAF9F7]">
-        {/* Left Side: Editor & Design Settings (Split pane on desktop) */}
-        <div className={`w-full lg:w-1/2 flex flex-col h-full min-w-0 ${activeTab === 'preview' ? 'hidden lg:flex' : 'flex'}`}>
-          {activeTab === 'design' ? (
-            <DesignSettingsPanel
-              settings={settings}
-              onUpdateSettings={handleUpdateSettings}
-            />
-          ) : (
-            <EditorPanel
-              content={content}
-              onChangeContent={setContent}
-              images={images}
-              onOpenImages={() => setIsImagesModalOpen(true)}
-              onOpenCheatsheet={() => setIsCheatsheetModalOpen(true)}
-              onOpenHistory={() => setIsHistoryModalOpen(true)}
-              onQuickSaveOutline={handleQuickSaveOutline}
-            />
-          )}
-        </div>
+      {/* Main Workspace Layout - Single Full-Width View by default across ALL devices */}
+      <div className="flex-1 flex overflow-hidden min-w-0 bg-[#FAF9F7] w-full">
+        {isSplitView ? (
+          /* Split View Mode (Only when explicitly activated on large desktop) */
+          <>
+            <div className="w-1/2 flex flex-col h-full min-w-0 border-r border-[#D1CEC8]">
+              {activeTab === 'design' ? (
+                <DesignSettingsPanel
+                  settings={settings}
+                  onUpdateSettings={handleUpdateSettings}
+                />
+              ) : (
+                <EditorPanel
+                  content={content}
+                  onChangeContent={setContent}
+                  images={images}
+                  onOpenImages={() => setIsImagesModalOpen(true)}
+                  onOpenCheatsheet={() => setIsCheatsheetModalOpen(true)}
+                  onOpenHistory={() => setIsHistoryModalOpen(true)}
+                  onQuickSaveOutline={handleQuickSaveOutline}
+                  onOpenPreview={() => {
+                    setIsSplitView(false);
+                    setActiveTab('preview');
+                  }}
+                />
+              )}
+            </div>
+            <div className="w-1/2 flex-1 h-full min-w-0">
+              <BookPreview
+                blocks={parsedBlocks}
+                settings={settings}
+                images={images}
+                onPageCountCalculated={setTotalPageCount}
+              />
+            </div>
+          </>
+        ) : (
+          /* Default Single View Mode: NO left strip on any device */
+          <>
+            {/* 1. Full-screen Book Preview (Default view, completely clean, 100% width) */}
+            {activeTab === 'preview' && (
+              <div className="w-full flex-1 h-full min-w-0">
+                <BookPreview
+                  blocks={parsedBlocks}
+                  settings={settings}
+                  images={images}
+                  onPageCountCalculated={setTotalPageCount}
+                />
+              </div>
+            )}
 
-        {/* Right Side: Real-time Live Book Preview */}
-        <div className={`w-full lg:w-1/2 flex-1 h-full min-w-0 ${activeTab !== 'preview' ? 'hidden lg:flex' : 'flex'}`}>
-          <BookPreview
-            blocks={parsedBlocks}
-            settings={settings}
-            images={images}
-            onPageCountCalculated={setTotalPageCount}
-          />
-        </div>
+            {/* 2. Full-screen Editor Workspace (For writing/editing) */}
+            {activeTab === 'editor' && (
+              <div className="w-full flex flex-col h-full min-w-0">
+                <EditorPanel
+                  content={content}
+                  onChangeContent={setContent}
+                  images={images}
+                  onOpenImages={() => setIsImagesModalOpen(true)}
+                  onOpenCheatsheet={() => setIsCheatsheetModalOpen(true)}
+                  onOpenHistory={() => setIsHistoryModalOpen(true)}
+                  onQuickSaveOutline={handleQuickSaveOutline}
+                  onOpenPreview={() => setActiveTab('preview')}
+                />
+              </div>
+            )}
+
+            {/* 3. Full-screen Styling & Design Studio */}
+            {activeTab === 'design' && (
+              <div className="w-full flex flex-col h-full min-w-0">
+                <DesignSettingsPanel
+                  settings={settings}
+                  onUpdateSettings={handleUpdateSettings}
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Modals */}

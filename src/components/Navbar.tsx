@@ -9,7 +9,9 @@ import {
   Eye, 
   FileText,
   History,
-  Bookmark
+  Bookmark,
+  Columns2,
+  Square
 } from 'lucide-react';
 import { BookSettings } from '../types';
 
@@ -24,6 +26,8 @@ interface NavbarProps {
   onOpenHistory: () => void;
   savedOutlinesCount: number;
   totalPageCount: number;
+  isSplitView?: boolean;
+  onToggleSplitView?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -37,6 +41,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHistory,
   savedOutlinesCount,
   totalPageCount,
+  isSplitView = false,
+  onToggleSplitView,
 }) => {
   return (
     <header className="h-14 border-b border-[#D1CEC8] bg-white flex items-center justify-between px-4 sm:px-6 select-none z-30 shrink-0 shadow-xs">
@@ -67,8 +73,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Center navigation */}
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-        {/* Tab switcher for mobile / medium screens */}
+        {/* Tab switcher for all devices */}
         <div className="flex items-center bg-[#FAF9F7] p-1 rounded border border-[#D1CEC8] shrink-0">
+          <button
+            id="nav-tab-preview"
+            onClick={() => setActiveTab('preview')}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-xs rounded transition-all tracking-wide shrink-0 ${
+              activeTab === 'preview'
+                ? 'bg-[#1A1A1A] text-white shadow-xs font-medium'
+                : 'text-[#666] hover:text-[#1A1A1A] hover:bg-[#E5E2DE]/50'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">Vista Previa</span>
+            <span className="sm:hidden">Libro</span>
+            <span className="text-[10px] opacity-75 font-mono">({totalPageCount})</span>
+          </button>
+
           <button
             id="nav-tab-editor"
             onClick={() => setActiveTab('editor')}
@@ -95,20 +116,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">Estilo & Diseño</span>
             <span className="sm:hidden">Estilo</span>
           </button>
-
-          <button
-            id="nav-tab-preview"
-            onClick={() => setActiveTab('preview')}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-xs rounded transition-all tracking-wide lg:hidden shrink-0 ${
-              activeTab === 'preview'
-                ? 'bg-[#1A1A1A] text-white shadow-xs font-medium'
-                : 'text-[#666] hover:text-[#1A1A1A] hover:bg-[#E5E2DE]/50'
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5 shrink-0" />
-            <span>Vista Previa ({totalPageCount})</span>
-          </button>
         </div>
+
+        {/* Optional Desktop Split-screen toggle (side-by-side) */}
+        {onToggleSplitView && (
+          <button
+            id="nav-btn-split-toggle"
+            onClick={onToggleSplitView}
+            className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-colors shrink-0 ${
+              isSplitView
+                ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]'
+                : 'bg-[#FAF9F7] text-[#666] hover:text-[#1A1A1A] hover:bg-white border-[#D1CEC8]'
+            }`}
+            title={isSplitView ? 'Volver a vista completa (sin división)' : 'Ver editor y libro lado a lado'}
+          >
+            {isSplitView ? <Square className="w-3.5 h-3.5" /> : <Columns2 className="w-3.5 h-3.5 text-[#B8860B]" />}
+            <span>{isSplitView ? 'Vista Completa' : 'Dividir'}</span>
+          </button>
+        )}
       </div>
 
       {/* Action buttons & tools */}
